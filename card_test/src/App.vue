@@ -1,0 +1,53 @@
+<template>
+  <div id="nav">
+    <router-link to="/">Home</router-link> |
+    <router-link to="/cards_demo_1">Cards 1</router-link>
+  </div>
+  <router-view id="view"/>
+</template>
+
+<style>
+html {
+  height: 100%;
+}
+body {
+  margin: 0;
+  height: 100%;
+}
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  background: #d0d0d0;
+  overflow: hidden;
+}
+
+#nav {
+  position: absolute;
+  width: 100%;
+  height: 50px;
+  background-image: linear-gradient(#ffff 20%, #fff0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+#nav a {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+#nav a.router-link-exact-active {
+  color: #42b983;
+}
+#view {
+  height: 100%;
+  width: 100%;
+}
+</style>
