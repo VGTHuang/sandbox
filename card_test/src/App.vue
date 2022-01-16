@@ -1,7 +1,8 @@
 <template>
   <div id="nav">
     <router-link to="/">Home</router-link> |
-    <router-link to="/cards_demo_1">Cards 1</router-link>
+    <router-link to="/cards_demo_1">Cards 1</router-link> |
+    <router-link to="/cards_demo_2">Cards 2</router-link>
   </div>
   <router-view id="view"/>
 </template>
@@ -23,7 +24,7 @@ body {
   padding: 0;
   margin: 0;
   height: 100%;
-  background: #d0d0d0;
+  background: #fff;
   overflow: hidden;
 }
 

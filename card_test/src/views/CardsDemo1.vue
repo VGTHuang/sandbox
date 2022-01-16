@@ -1,36 +1,20 @@
 <template>
-  <div class="demo-container"
-    @click="containerClicked">
-    <!-- <div class="card-button-group">
-      <button @click="cardArrangement = 0">stack</button>
-      <button @click="cardArrangement = 1">carousel</button>
-    </div> -->
-    <div class="card-container" :style="{
-      transform: `rotateX(${dampRotY}deg) rotateY(${-dampRotX}deg)`
-    }"
-    >
-      <Card v-for="(item, i) in cardContents" :key="i"
+  <card-dynamic-container @containerClicked="containerClicked">
+      <dynamic-card v-for="(item, i) in cardContents" :key="i"
       :translate="item.translate"
       :rotate="item.rotate"
       :blur="item.blur"
       @clicked="cardClicked($event, i)"
       >
-      <template v-slot:front>
-        <span class="card-front-style">{{item.text}}</span>
-      </template>
-      </Card>
-    </div>
-
-  </div>
+        <template v-slot:front>
+          <span class="card-front-style">{{item.text}}</span>
+        </template>
+      </dynamic-card>
+    </card-dynamic-container>
 </template>
 
 <script>
-import Card from "@/components/Card";
-import { IsMobile } from "@/js/Utils"
 export default {
-  components: {
-    Card
-  },
   data() {
     return {
       /**
@@ -81,20 +65,7 @@ export default {
           text: "card7"
         }
       ],
-      
       cardArrangement: 0,
-
-      // mouse damp
-      bufferDamp: 0.9,
-      mousePosX: -1,
-      mousePosY: -1,
-      dampPosX: -1,
-      dampPosY: -1,
-      dampRotX: 0,
-      dampRotY: 0,
-      dampMinValue: 1e-3,
-      dampRotIntensity: 0.02,
-      dampInterval: undefined,
 
       // stack
       cardStackGap: 10,
@@ -103,93 +74,14 @@ export default {
       carouselWheelRadius: 180,
       carouselWheelCenter: -100,
       tempCarouselItem: 0,
-
-      // touch
-      touchBeginX: 0,
-      touchBeginY: 0,
-      touchPosX: 0,
-      touchPosY: 0
     }
   },
   created() {
     this.cardMove__Stack()
-    this.dampInterval = setInterval(this.updateMouseDamp, "50")
-    window.addEventListener('mousemove', this.getMousePos)
-
     // calculate carousel wheel radius = card_wid/(2*atan(pi/n))
     this.carouselWheelRadius = 180/(2*Math.atan(Math.PI/this.cardContents.length))
-    
-    window.addEventListener("wheel", this.mouseWheel)
-    if (IsMobile()) {
-      window.addEventListener('touchstart',this.touchs,false)
-      window.addEventListener('touchmove',this.touchs,false)
-      window.addEventListener('touchend',this.touchs,false)
-    }
-    else {
-      window.addEventListener('touchstart',this.touchs,false)
-      window.addEventListener('touchmove',this.touchs,false)
-      window.addEventListener('touchend',this.touchs,false)
-    }
   },
   methods: {
-    touchs(event) {
-      let touch = event.touches[0]
-      if (event.type == 'touchmove') {
-        this.touchPosX = touch.clientX
-        this.touchPosY = touch.clientY
-      }
-      else if (event.type == 'touchstart') {
-        this.touchBeginX = touch.clientX
-        this.touchBeginY = touch.clientY
-        this.touchPosX = touch.clientX
-        this.touchPosY = touch.clientY
-      }
-      else if (event.type == 'touchend' || event.type == 'touchcancel') {
-        console.log('asd')
-        let touchMoveDistX = this.touchPosX - this.touchBeginX
-        let touchMoveDistY = this.touchPosY - this.touchBeginY
-        if (Math.abs(touchMoveDistY) < Math.abs(touchMoveDistX) * 0.5 && Math.abs(touchMoveDistX) > 50) {
-          if (this.cardArrangement !== 1) {
-            return
-          }
-          this.mouseWheel({deltaY: touchMoveDistX})
-          // if (touchMoveDistX > 0) {
-          //   // swipe right
-          // }
-          // else {
-          //   // swipe left
-          // }
-        }
-      }
-      // console.log(touch, event.type)
-    },
-    getMousePos(val) {
-      this.mousePosX = val.clientX
-      this.mousePosY = val.clientY
-      if (this.dampInterval == undefined) {
-        this.dampInterval = setInterval(this.updateMouseDamp, "20")
-      }
-    },
-    updateMouseDamp() {
-      if (this.dampPosX != -1 || this.dampPosY != -1) {
-        this.dampPosX = this.bufferDamp * this.dampPosX + (1-this.bufferDamp) * this.mousePosX
-        this.dampPosY = this.bufferDamp * this.dampPosY + (1-this.bufferDamp) * this.mousePosY
-        this.dampRotX = this.mousePosX - this.dampPosX
-        this.dampRotY = this.mousePosY - this.dampPosY
-        this.dampRotX *= this.dampRotIntensity
-        this.dampRotY *= this.dampRotIntensity
-        if (Math.abs(this.dampRotX) < this.dampMinValue && Math.abs(this.dampRotY) < this.dampMinValue) {
-          this.dampRotX = 0
-          this.dampRotY = 0
-          clearInterval(this.dampInterval)
-          this.dampInterval = undefined
-        }
-      }
-      else {
-        this.dampPosX = this.mousePosX
-        this.dampPosY = this.mousePosX
-      }
-    },
     cardMove__Stack() {
       for(let i = 0; i < this.cardContents.length; i++) {
         let tempContent = this.cardContents[i]
@@ -300,32 +192,6 @@ export default {
 </script>
 
 <style scoped>
-.demo-container {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.card-container {
-  position: relative;
-  height: 0;
-  width: 0;
-  perspective: 1000px;
-  transform-style: preserve-3d;
-  transform-origin: 0 0 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  /* display: flex;
-  justify-content: center;
-  align-items: center; */
-}
-.card-button-group {
-  position: absolute;
-  top: 100px;
-  z-index: 999;
-}
 .card-front-style {
   font-size: 40pt;
 }
