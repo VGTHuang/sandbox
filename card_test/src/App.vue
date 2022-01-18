@@ -2,7 +2,10 @@
   <div id="nav">
     <router-link to="/">Home</router-link> |
     <router-link to="/cards_demo_1">Cards 1</router-link> |
-    <router-link to="/cards_demo_2">Cards 2</router-link>
+    <router-link to="/cards_demo_2/0">Cards 2</router-link> |
+    <router-link to="/cards_demo_2/1">Cards 2 w/ bg</router-link> |
+    <router-link to="/cards_demo_3">Cards 3</router-link>
+    <!-- <router-link to="/cards_demo_threejs">Cards w/ THREE.js</router-link> -->
   </div>
   <router-view id="view"/>
 </template>

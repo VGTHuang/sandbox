@@ -16,10 +16,20 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ '../views/CardsDemo1.vue')
   },
   {
-    path: '/cards_demo_2',
+    path: '/cards_demo_2/:bg',
     name: 'CardsDemo2',
     component: () => import('../views/CardsDemo2.vue')
-  }
+  },
+  {
+    path: '/cards_demo_3',
+    name: 'CardsDemo3',
+    component: () => import('../views/CardsDemo3.vue')
+  },
+  // {
+  //   path: '/cards_demo_threejs',
+  //   name: 'CardsDemoThree',
+  //   component: () => import('../views/CardsDemoThree.vue')
+  // }
 ]
 
 const router = createRouter({

@@ -1,0 +1,39 @@
+.transition__basic {
+    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 250ms;
+}
+.transition__fast {
+    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 100ms;
+}
+.transition__slow {
+    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 500ms;
+}
+.transition__spring {
+    transition: cubic-bezier(0.175, 0.5, 0.7, 1.5) 500ms;
+}
+
+.card__basic-style {
+    position: absolute;
+    /* border: 1px solid red; */
+    border-radius: 15px;
+    height: 252pt; /* 7 * 36 */
+    width: 180pt; /* 5 * 36 */
+    background: #ccca;
+    transform-origin: 90pt 126pt 0;
+    transform-style: preserve-3d;
+    transition: 250ms;
+}
+
+.card__front, .card__back {
+    height: 252pt; /* 7 * 36 */
+    width: 180pt; /* 5 * 36 */
+    position: absolute;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.card__back {
+    transform: rotateY(180deg);
+}

@@ -24,43 +24,43 @@ export default {
       cardContents: [
         {
           translate: [0,0,0],
-          rotate: [0,0,0,0],
+          rotate: [0,0,0],
           blur: 0,
           text: "card1"
         },
         {
           translate: [0,0,0],
-          rotate: [0,0,0,0],
+          rotate: [0,0,0],
           blur: 0,
           text: "card2"
         },
         {
           translate: [0,0,0],
-          rotate: [0,0,0,0],
+          rotate: [0,0,0],
           blur: 0,
           text: "card3"
         },
         {
           translate: [0,0,0],
-          rotate: [0,0,0,0],
+          rotate: [0,0,0],
           blur: 0,
           text: "card4"
         },
         {
           translate: [0,0,0],
-          rotate: [0,0,0,0],
+          rotate: [0,0,0],
           blur: 0,
           text: "card5"
         },
         {
           translate: [0,0,0],
-          rotate: [0,0,0,0],
+          rotate: [0,0,0],
           blur: 0,
           text: "card6"
         },
         {
           translate: [0,0,0],
-          rotate: [0,0,0,0],
+          rotate: [0,0,0],
           blur: 0,
           text: "card7"
         }
@@ -87,7 +87,7 @@ export default {
         let tempContent = this.cardContents[i]
         
         let pos = -this.cardContents.length / 2 + i
-        pos *= 10
+        pos *= this.cardStackGap
         tempContent.rotate = [0,0,0]
         tempContent.translate = [pos, pos, -pos]
         tempContent.blur = 0
