@@ -3,7 +3,7 @@
     <button @click="cardArrangement = 0">stack</button>
     <button @click="cardArrangement = 1">carousel</button>
   </div> -->
-  <div class="card-container" :style="{
+  <div class="card-container" @click="$emit('containerClicked')" :style="{
     transform: `translateX(${initialTranslate[0]}pt) translateY(${initialTranslate[1]}pt) translateZ(${initialTranslate[2]}pt)
     rotateX(${initialRotate[0]+dampRotY}deg) rotateY(${initialRotate[1]-dampRotX}deg)`
   }"
@@ -86,7 +86,6 @@ export default {
         this.touchPosY = touch.clientY
       }
       else if (event.type == 'touchend' || event.type == 'touchcancel') {
-        console.log('asd')
         let touchMoveDistX = this.touchPosX - this.touchBeginX
         let touchMoveDistY = this.touchPosY - this.touchBeginY
         if (Math.abs(touchMoveDistY) < Math.abs(touchMoveDistX) * 0.5 && Math.abs(touchMoveDistX) > 50) {

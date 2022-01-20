@@ -25,6 +25,16 @@ const routes = [
     name: 'CardsDemo3',
     component: () => import('../views/CardsDemo3.vue')
   },
+  {
+    path: '/cards_demo_perf_test_1',
+    name: 'CardsDemoPerfTest1',
+    component: () => import('../views/CardsDemoPerfTest1.vue')
+  },
+  {
+    path: '/cards_demo_perf_test_2',
+    name: 'CardsDemoPerfTest2',
+    component: () => import('../views/CardsDemoPerfTest2.vue')
+  },
   // {
   //   path: '/cards_demo_threejs',
   //   name: 'CardsDemoThree',

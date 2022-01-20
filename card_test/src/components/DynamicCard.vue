@@ -3,16 +3,18 @@
   ref="card"
   :class="{transition__basic: doTransition, 'is-front': isFront}"
   :style="{
+    width: cardSize == undefined ? '' : cardSize[0]+'pt',
+    height: cardSize == undefined ? '' : cardSize[1]+'pt',
     transform: cardTransform
   }"
   @click="$emit('clicked', $event)"
   >
     <div class="card__front">
-      <button @click="bringToFront">bring to front</button>
-      <button @click="bringToBack">bring to back</button>
+      <button @click="bringToFront" v-if="!noFrontBackButton">bring to front</button>
+      <button @click="bringToBack" v-if="!noFrontBackButton">bring to back</button>
       <slot name="front">card</slot>
     </div>
-    <div class="card__back">
+    <div class="card__back" :class="{'card__back-default': !noDefaultBack}">
       <slot name="back">card</slot>
     </div>
     <slot name="icing"></slot>
@@ -23,6 +25,10 @@
 export default {
   name: "DynamicCard",
   props: {
+    cardSize: {
+      type: Array,
+      default: () => undefined,
+    },
     translate: {
       type: Array,
       default: () => [0,0,0],
@@ -38,6 +44,14 @@ export default {
     doTransition: {
       type: Boolean,
       default: true,
+    },
+    noFrontBackButton: {
+      type: Boolean,
+      default: false,
+    },
+    noDefaultBack: {
+      type: Boolean,
+      default: false,
     }
   },
   data() {
@@ -82,8 +96,8 @@ export default {
 </script>
 
 <style scoped>
-.card__back {
+.card__back-default {
   background-image: url('https://opengameart.org/sites/default/files/card%20back%20black.png');
-  background-size: 180pt 252pt;
+  background-size: 100% 100%;
 }
 </style>

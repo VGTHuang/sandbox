@@ -1,14 +1,17 @@
 .transition__basic {
-    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 250ms;
+    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 250ms !important;
 }
 .transition__fast {
-    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 100ms;
+    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 100ms !important;
 }
 .transition__slow {
-    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 500ms;
+    transition: cubic-bezier(0.165, 0.84, 0.44, 1) 500ms !important;
+}
+.transition__none {
+    transition: none !important;
 }
 .transition__spring {
-    transition: cubic-bezier(0.175, 0.5, 0.7, 1.5) 500ms;
+    transition: cubic-bezier(0.175, 0.5, 0.7, 1.5) 500ms !important;
 }
 
 .card__basic-style {
@@ -18,14 +21,14 @@
     height: 252pt; /* 7 * 36 */
     width: 180pt; /* 5 * 36 */
     background: #ccca;
-    transform-origin: 90pt 126pt 0;
+    transform-origin: 50% 50% 0;
     transform-style: preserve-3d;
     transition: 250ms;
 }
 
 .card__front, .card__back {
-    height: 252pt; /* 7 * 36 */
-    width: 180pt; /* 5 * 36 */
+    height: 100%;
+    width: 100%;
     position: absolute;
     backface-visibility: hidden;
     display: flex;
