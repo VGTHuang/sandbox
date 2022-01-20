@@ -8,7 +8,7 @@
       <router-link to="/cards_demo_3">Cards 3</router-link>
     </p>
     <p>
-      <router-link to="/cards_demo_perf_test_1">Performance test 1</router-link>
+      <router-link to="/cards_demo_perf_test_1">Performance test 1</router-link> |
       <router-link to="/cards_demo_perf_test_2">Performance test 2</router-link>
     </p>
   </div>

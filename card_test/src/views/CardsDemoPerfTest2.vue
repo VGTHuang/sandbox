@@ -20,9 +20,37 @@
         >
           <template v-slot:front>
             <button @click="cardFlip($event, i, 1)">flip</button>
+            <el-image style="width: 180px; height: 180px" :src="item.frontUrl">
+              <template #placeholder>
+                <el-skeleton animated>
+                  <template #template>
+                    <el-skeleton-item variant="image" animated style="width: 180px; height: 180px" />
+                  </template>
+                </el-skeleton>
+              </template>
+              <template #error>
+                <div class="image-slot">
+                  <el-icon><Picture /></el-icon>
+                </div>
+              </template>
+              </el-image>
           </template>
           <template v-slot:back>
             <button @click="cardFlip($event, i, 2)">flip</button>
+            <el-image style="width: 180px; height: 180px" :src="item.backUrl">
+              <template #placeholder>
+                <el-skeleton animated>
+                  <template #template>
+                    <el-skeleton-item variant="image" animated style="width: 180px; height: 180px" />
+                  </template>
+                </el-skeleton>
+              </template>
+              <template #error>
+                <div class="image-slot">
+                  <el-icon><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
           </template>
         </dynamic-card>
       </inner-dynamic-container>
@@ -39,6 +67,9 @@ export default {
        *    translate indicates each card's translation **relative to table center**
        */
       cardContents: [],
+
+      // rand image
+      randImageId: 1,
 
       // lay
       cardLayGap: 200,
@@ -64,7 +95,8 @@ export default {
           translate: [0,0,0],
           rotate: [0,0,0],
           blur: 0,
-          text: "card" + (i+1)
+          frontUrl: this.getRandImage(),
+          backUrl: this.getRandImage()
         }
       )
     }
@@ -79,6 +111,10 @@ export default {
     }
   },
   methods: {
+    getRandImage() {
+      this.randImageId = Math.floor(Math.random() * 1024)
+      return `https://picsum.photos/id/${this.randImageId}/180/180`
+    },
     cardMove__Lay() {
       this.containerTranslate[0] = this.leftmostPosition
       for(let i = 0; i < this.cardContents.length; i++) {
@@ -134,22 +170,28 @@ export default {
     cardMouseLeave(e, val) {
       this.cardContents[val].rotate[0] = this.layRotateAngle
     },
-    cardBroughtToFront(e, val) {
-      this.stopMotion = true
-      this.leftmostPosition = -this.cardLayGap * val
-      this.$nextTick(() => {
-        e.style.transform = `translateZ(${200}pt) translateX(${-this.leftmostPosition}pt)`
-      })
-      this.updateCardRowPositions(true)
-    },
-    cardBroughtToBack(e, val) {
-      this.stopMotion = false
-      this.leftmostPosition = -this.cardLayGap * val
-      this.updateCardRowPositions()
-    },
-    cardFlip(e, val) {
+    // cardBroughtToFront(e, val) {
+    //   this.stopMotion = true
+    //   this.leftmostPosition = -this.cardLayGap * val
+    //   this.$nextTick(() => {
+    //     e.style.transform = `translateZ(${200}pt) translateX(${-this.leftmostPosition}pt)`
+    //   })
+    //   this.updateCardRowPositions(true)
+    // },
+    // cardBroughtToBack(e, val) {
+    //   this.stopMotion = false
+    //   this.leftmostPosition = -this.cardLayGap * val
+    //   this.updateCardRowPositions()
+    // },
+    cardFlip(e, val, i) {
       console.log(this.cardContents[val].rotate)
       this.cardContents[val].rotate[1] += 180
+      if (i == 1) {
+        this.cardContents[val].backUrl = this.getRandImage()
+      }
+      else {
+        this.cardContents[val].frontUrl = this.getRandImage()
+      }
     }
   },
   watch: {
@@ -173,13 +215,11 @@ export default {
   justify-content: center;
   align-items: center;
 }
-.demo-container-w-bg {
-  background: url(http://www.zastavki.com/pictures/1920x1200/2009/Creative_Wallpaper_Wood_Floor_018360_.jpg);
-}
-.card-front-style {
-  font-size: 40pt;
-}
 .lay-card {
-  transform-origin: 0 0 50%;
+  transform-origin: 50% 100% 0;
+}
+.lay-card >>> .card__front, 
+.lay-card >>> .card__back {
+  flex-direction: column;
 }
 </style>

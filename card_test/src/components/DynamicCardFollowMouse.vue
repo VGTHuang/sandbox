@@ -126,7 +126,7 @@ export default {
 
 <style scoped>
 .card__back {
-  background-image: url('https://opengameart.org/sites/default/files/card%20back%20black.png');
+  background-image: url('/assets/other_imgs/poker_back.png');
   background-size: 100% 100%;
 }
 .front-btn, .back-btn {
