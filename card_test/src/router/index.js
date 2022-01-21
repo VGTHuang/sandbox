@@ -35,6 +35,11 @@ const routes = [
     name: 'CardsDemoPerfTest2',
     component: () => import('../views/CardsDemoPerfTest2.vue')
   },
+  {
+    path: '/cards_demo_pages/:p1/:p2',
+    name: 'CardsDemoSPAPageUrl',
+    component: () => import('../views/CardsDemoSPAPageUrl.vue')
+  },
   // {
   //   path: '/cards_demo_threejs',
   //   name: 'CardsDemoThree',

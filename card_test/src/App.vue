@@ -11,6 +11,9 @@
       <router-link to="/cards_demo_perf_test_1">Performance test 1</router-link> |
       <router-link to="/cards_demo_perf_test_2">Performance test 2</router-link>
     </p>
+    <p>
+      <router-link to="/cards_demo_pages/1/1">Page test 1</router-link>
+    </p>
   </div>
   <router-view id="view"/>
 </template>
