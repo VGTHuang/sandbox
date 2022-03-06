@@ -8,16 +8,16 @@ import matplotlib.pyplot as plt
 
 import consts as CONSTS
 import utils as UTILS
-import hydronet as NET
+import net as NET
 import datamanager as DataManager
 
-mix_loss = NET.MixMSEEnhanceLoss(logarithmic_ratio=0.9)
+mix_loss = NET.MixHuberLoss(logarithmic_ratio=0.9)
 mae_acc = NET.L1Accuracy()
 
 BATCH_SIZE = 4
 LR = 1e-2
 EPOCHS = 100
-SCHEDULER_MILESTONES = [10, 25, 50]
+SCHEDULER_MILESTONES = [25, 50]
 
 device = 'cpu'
 if torch.cuda.is_available():
@@ -92,8 +92,10 @@ def train(net: nn.Module, train_loader: DataLoader, test_loader: DataLoader):
         record.append([train_loss, train_acc, test_loss, test_acc])
 
         if max_test_acc < test_acc:
-            torch.save(net.state_dict(), 'net_dict/net_dict.pth')
+            torch.save(net.state_dict(), 'net_dict/net_dict_morelog_best.pth')
             print(epoch)
+        if epoch % 20 == 0:
+            torch.save(net.state_dict(), f'net_dict/net_dict_morelog_{epoch}.pth')
         max_train_acc = max(max_train_acc, train_acc)
         max_test_acc = max(max_test_acc, test_acc)
 
@@ -106,10 +108,10 @@ def train(net: nn.Module, train_loader: DataLoader, test_loader: DataLoader):
 if __name__ == '__main__':
     # load data
     train_test_ratio = 0.8
-    train_set = DataManager.HydroDataset('norm_data.npy', is_training=True, train_test_ratio=train_test_ratio)
-    test_set = DataManager.HydroDataset('norm_data.npy', is_training=False, train_test_ratio=train_test_ratio)
     # train_set = DataManager.SineDataset(data_size = 500, is_training=True, train_test_ratio=train_test_ratio)
     # test_set = DataManager.SineDataset(data_size = 500, is_training=False, train_test_ratio=train_test_ratio)
+    train_set = DataManager.HydroDataset('norm_data.npy', is_training=True, train_test_ratio=train_test_ratio)
+    test_set = DataManager.HydroDataset('norm_data.npy', is_training=False, train_test_ratio=train_test_ratio)
 
     train_loader = DataLoader(train_set, BATCH_SIZE, True)
     test_loader = DataLoader(test_set, BATCH_SIZE, False)
@@ -120,7 +122,7 @@ if __name__ == '__main__':
     # rec, max_train_acc, max_test_acc = train(hn, train_loader, test_loader)
     # print(max_train_acc, max_test_acc)
 
-    # # lstm channel test
+    # # *************** lstm channel test ***************
     # perf_rec = []
     # lstm_channels = [16, 32, 64, 128, 256]
     # for lc in lstm_channels:
@@ -133,7 +135,7 @@ if __name__ == '__main__':
     
     # torch.save(perf_rec, 'performance/lstm_channel.pth')
 
-    # # conv channel test
+    # # *************** conv channel test ***************
     # perf_rec = []
     # conv_channels = [16, 32, 64, 128, 256]
     # for cc in conv_channels:
@@ -146,7 +148,7 @@ if __name__ == '__main__':
     
     # torch.save(perf_rec, 'performance/conv_channel.pth')
 
-    # # lstm layers test
+    # # *************** lstm layers test ***************
     # perf_rec = []
     # lstm_layers = [1,2,3]
     # for ll in lstm_layers:
@@ -159,9 +161,8 @@ if __name__ == '__main__':
     
     # torch.save(perf_rec, 'performance/lstm_layers.pth')
 
-    net = NET.HydroNetCNNLSTM(input_channel=13, conv_channel=32, conv_filter_sizes=[1,2,3,4], lstm_hidden_channel=64, lstm_layers=2, bidirectional=True)
+    net = NET.HydroNetLSTM(lstm_hidden_channel=32, lstm_layers=2, bidirectional=True)
     net = net.to(device)
     
     rec, max_train_acc, max_test_acc = train(net, train_loader, test_loader)
     print(max_train_acc, max_test_acc)
-    torch.save(torch.tensor(rec), 'performance/rec_model=cl_logr=90_loss=msee.pth')
