@@ -148,7 +148,6 @@ class HydroNetCNNLSTM(nn.Module):
         out = out.permute(0,2,1)
         out, _ = self.lstm(out)
         out = out[:,-1,:]
-        # out = out.reshape(out.shape[0], -1)
         out = self.linear(out)
         return out
 
@@ -184,36 +183,10 @@ class HydroNetLSTMAM(nn.Module):
         ln_out = self.linear(am_out)
         return ln_out
 
-class HydroNetCNNLSTMAM(nn.Module):
-    def __init__(self, input_channel=13, output_channel=7, conv_channel=32, conv_filter_sizes=[1,2,3], lstm_hidden_channel=64, lstm_layers=2, bidirectional=True):
-        super(HydroNetCNNLSTMAM, self).__init__()
+class HydroNetCNNLSTMAM(HydroNetCNNLSTM):
+    def __init__(self, input_channel=13, output_channel=7, cnn_channels=[16, 32, 64], lstm_hidden_channel=64, lstm_layers=2, bidirectional=True):
+        super(HydroNetCNNLSTMAM, self).__init__(input_channel, output_channel, cnn_channels, lstm_hidden_channel, lstm_layers, bidirectional)
         
-        self.input_channel = input_channel
-        self.conv_channel = conv_channel
-        self.lstm_hidden_channel = lstm_hidden_channel
-        self.lstm_layers = lstm_layers
-        self.num_directions = 2 if bidirectional else 1
-        
-        self.convs = nn.ModuleList()
-        for conv_size in conv_filter_sizes:
-            self.convs.append(
-                nn.Sequential(
-                    nn.Conv2d(1, conv_channel, (conv_size, input_channel)),
-                    # nn.BatchNorm2d(conv_channel),
-                    nn.LeakyReLU()
-                )
-            )
-        self.lstm = nn.LSTM(conv_channel, lstm_hidden_channel, lstm_layers, batch_first=True, bidirectional=bidirectional)
-        self.linear1 = nn.Sequential(
-            nn.Linear(lstm_hidden_channel * self.num_directions * lstm_layers * len(conv_filter_sizes), lstm_hidden_channel * self.num_directions * lstm_layers),
-            nn.Dropout(),
-            nn.LeakyReLU()
-        )
-        self.linear2 = nn.Sequential(
-            nn.Linear(lstm_hidden_channel * self.num_directions * lstm_layers, output_channel),
-            nn.Sigmoid()
-        )
-
     def attention_net(self, output, hn):
         # hidden = hn.permute(1,0,2).reshape(-1,self.lstm_hidden_channel*self.num_directions,self.lstm_layers)
         hidden = hn.view(self.lstm_layers,-1,self.lstm_hidden_channel*self.num_directions).permute(1,0,2).transpose(1,2)
@@ -224,18 +197,18 @@ class HydroNetCNNLSTMAM(nn.Module):
         return context
 
     def forward(self, input):
-        input = input.unsqueeze(1)
-        outs = []
+        
+        out = input.permute(0,2,1)
+        # out = input[:,None,:,:]
         for conv in self.convs:
-            out = conv(input).squeeze(3).permute(0,2,1)
-            out, (hn, _) = self.lstm(out)
-            am_out = self.attention_net(out, hn)
-            am_out = am_out.view(-1, self.lstm_hidden_channel * self.num_directions * self.lstm_layers)
-            outs.append(am_out)
-        outs = torch.hstack(outs)
-        out = self.linear1(outs)
-        out = self.linear2(out)
+            out = conv(out)
+        out = out.permute(0,2,1)
+        out, (hn, _) = self.lstm(out)
+        out = self.attention_net(out, hn)
+        out = out[:,:,-1]
+        out = self.linear(out)
         return out
+
 
 class L1Accuracy(nn.L1Loss):
     def __init__(self):
@@ -273,10 +246,9 @@ def NSE(yhat, y):
     return (torch.sum((yhat - y)**2) / torch.sum((y - torch.mean(y)) ** 2))
 
 if __name__ == '__main__':
-    net = HydroNetCNN(
+    net = HydroNetCNNLSTMAM(
         input_channel=13,
-        output_channel=14,
-        seqlen = 30,
+        output_channel=7,
         cnn_channels=[32, 64, 128])
     input = torch.rand(5, 30, 13)
     print(net(input).shape)

@@ -18,7 +18,7 @@ from net import RMSE, MAPE, NSE, MSEEnhanceLoss
 import datamanager as DataManager
 from predict import plot_test, get_eval_values
 
-NET_DICT_DIR = 'net_dict_cnnlstm'
+NET_DICT_DIR = 'net_dict_cnnlstmam'
 
 # mse_loss = MSEEnhanceLoss()
 mse_loss = nn.MSELoss()
@@ -26,7 +26,7 @@ mae_acc = NET.L1Accuracy()
 
 BATCH_SIZE = 16
 LR = 1e-3
-EPOCHS = 100
+EPOCHS = 200
 
 device = 'cpu'
 if torch.cuda.is_available():
@@ -172,15 +172,20 @@ if __name__ == '__main__':
     #     output_channel=(train_set.step_to-train_set.step_from+1),
     #     seqlen = train_set.seq_len,
     #     cnn_channels=[64,64,64])
-    net = NET.HydroNetCNNLSTM(
+    # net = NET.HydroNetCNNLSTM(
+    #     input_channel=train_set.channels,
+    #     output_channel=(train_set.step_to-train_set.step_from+1),
+    #     cnn_channels=[32,64],
+    #     lstm_hidden_channel=64, lstm_layers=2, bidirectional=True)
+    net = NET.HydroNetCNNLSTMAM(
         input_channel=train_set.channels,
         output_channel=(train_set.step_to-train_set.step_from+1),
         cnn_channels=[32,64],
         lstm_hidden_channel=64, lstm_layers=2, bidirectional=True)
     # net = NET.HydroNetLSTMAM(input_channel=train_set.channels,
-    #     output_channel=(train_set.step_to-train_set.step_from+1) * 2,
+    #     output_channel=(train_set.step_to-train_set.step_from+1),
     #     lstm_hidden_channel=64, lstm_layers=1, bidirectional=True)
-    # net = NET.HydroNetCNNLSTMAM(input_channel=len(CONSTS.CORR), conv_channel=32, conv_filter_sizes=[1,2,3], lstm_hidden_channel=32, lstm_layers=1, bidirectional=True)
+    
     net = net.to(device)
     
     train(net, train_loader, test_loader, train_fig_loader)
