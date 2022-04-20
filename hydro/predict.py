@@ -77,11 +77,11 @@ def plot_test(test_loader, net, dict_paths, device='cpu', step=0):
             target = target.to(device)
             with torch.no_grad():
                 predict = net(input)
-            predicts.extend(UTILS.denormalize_output(predict[:,:7]).cpu().detach()[:,step].tolist())
-            predicts_pow.extend(predict[:,7:].cpu().detach()[:,step].tolist())
+            predicts.extend(UTILS.denormalize_output(predict[:]).cpu().detach()[:,step].tolist())
+            predicts_pow.extend(torch.sqrt(predict[:]).cpu().detach()[:,step].tolist())
             if not target_plotted:
-                targets.extend(UTILS.denormalize_output(target[:,:7]).cpu().detach()[:,step].tolist())
-                targets_pow.extend(target[:,7:].cpu().detach()[:,step].tolist())
+                targets.extend(UTILS.denormalize_output(target[:]).cpu().detach()[:,step].tolist())
+                targets_pow.extend(torch.sqrt(target[:]).cpu().detach()[:,step].tolist())
             # predicts.extend((UTILS.denormalize_output(target)*0.99).cpu().detach()[:,step].tolist())
         predicts = torch.tensor(predicts)
         if not target_plotted:

@@ -46,8 +46,8 @@ class HydroDataset(AbstractHydroDataset):
         d = super(HydroDataset, self).__getitem__(index)
         input = d[:self.seq_len]
         output = d[self.seq_len+self.step_from-1:self.seq_len+self.step_to,12]
-        output_pow = torch.pow(output, 0.5)
-        return input, torch.hstack((output, output_pow))
+        # output_pow = torch.pow(output, 0.5)
+        return input, output
 
 
 class HydroDatasetCorr(AbstractHydroDataset):

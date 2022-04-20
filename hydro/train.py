@@ -14,19 +14,19 @@ import matplotlib.pyplot as plt
 import consts as CONSTS
 import utils as UTILS
 import net as NET
-from net import RMSE, MAPE, NSE
+from net import RMSE, MAPE, NSE, MSEEnhanceLoss
 import datamanager as DataManager
 from predict import plot_test, get_eval_values
 
-NET_DICT_DIR = 'net_dict_lstm'
+NET_DICT_DIR = 'net_dict_cnnlstm'
 
+# mse_loss = MSEEnhanceLoss()
 mse_loss = nn.MSELoss()
 mae_acc = NET.L1Accuracy()
 
-BATCH_SIZE = 4
-LR = 1e-2
-EPOCHS = 200
-SCHEDULER_MILESTONES = [10, 20, 50, 10, 200]
+BATCH_SIZE = 16
+LR = 1e-3
+EPOCHS = 100
 
 device = 'cpu'
 if torch.cuda.is_available():
@@ -71,11 +71,12 @@ def test(net: nn.Module, test_loader: DataLoader, loss_module: nn.Module, acc_mo
 
 
 
-def train(net: nn.Module, train_loader: DataLoader, test_loader: DataLoader):
+def train(net: nn.Module, train_loader: DataLoader, test_loader: DataLoader, train_fig_loader: DataLoader):
 
     record = []
-    optimizer = torch.optim.Adam(net.parameters(), lr=LR)
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda a : (math.cos(a * 5 * math.pi / EPOCHS) * 0.99 + 1.01) / 2)
+    # optimizer = torch.optim.Adam(net.parameters(), lr=LR, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(net.parameters(), lr=LR, weight_decay=1e-6)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=72, eta_min=1e-5)
 
     lowest_nse = inf
     
@@ -103,6 +104,7 @@ def train(net: nn.Module, train_loader: DataLoader, test_loader: DataLoader):
 
             optimizer.zero_grad()
             loss.backward()
+            nn.utils.clip_grad_norm_(net.parameters(), max_norm=20, norm_type=2)
             optimizer.step()
 
             train_loss += loss.item()
@@ -123,12 +125,20 @@ def train(net: nn.Module, train_loader: DataLoader, test_loader: DataLoader):
         if lowest_nse > NSEs[0]:
             net = net.cpu()
             torch.save(net.state_dict(), f'{NET_DICT_DIR}/best.pth')
+            plot_test(test_loader, net, dict_paths=None, step=0)
+            plt.savefig(f'{NET_DICT_DIR}/best_fig.png')
+            plt.cla()
+            plt.close('all')
             print(epoch)
         if epoch % 20 == 0:
             net = net.cpu()
             torch.save(net.state_dict(), f'{NET_DICT_DIR}/{epoch}.pth')
+            plot_test(train_fig_loader, net, dict_paths=None, step=0)
+            plt.savefig(f'{NET_DICT_DIR}/{epoch}_fig_tr.png')
+            plt.cla()
+            plt.close('all')
             plot_test(test_loader, net, dict_paths=None, step=0)
-            plt.savefig(f'{NET_DICT_DIR}/{epoch}_fig.png')
+            plt.savefig(f'{NET_DICT_DIR}/{epoch}_fig_te.png')
             plt.cla()
             plt.close('all')
         net = net.to(device)
@@ -145,36 +155,49 @@ if __name__ == '__main__':
 
     # load data
     train_test_ratio = 0.8
+    train_fig_set = DataManager.HydroDataset('xy.pth', is_training=True, train_test_ratio=1 - train_test_ratio)
     train_set = DataManager.HydroDataset('xy.pth', is_training=True, train_test_ratio=train_test_ratio)
     test_set = DataManager.HydroDataset('xy.pth', is_training=False, train_test_ratio=train_test_ratio)
     # train_set = DataManager.HydroDataset('norm_data.npy', seq_len=24, is_training=True, train_test_ratio=train_test_ratio)
     # test_set = DataManager.HydroDataset('norm_data.npy', seq_len=24, is_training=False, train_test_ratio=train_test_ratio)
 
     train_loader = DataLoader(train_set, BATCH_SIZE, True)
+    train_fig_loader = DataLoader(train_fig_set, BATCH_SIZE, False)
     test_loader = DataLoader(test_set, BATCH_SIZE, False)
 
-    # net = NET.HydroNetDense(input_channel=train_set.channels, output_channel=(train_set.step_to-train_set.step_from+1) * 2, seqlen=train_set.seq_len, hidden_channels=64, hidden_layers=4)
-    net = NET.HydroNetLSTM(input_channel=train_set.channels, output_channel=(train_set.step_to-train_set.step_from+1) * 2, lstm_hidden_channel=64, lstm_layers=1, bidirectional=True)
-    # net = NET.HydroNetCNNLSTM(input_channel=train_set.channels, output_channel=(train_set.step_to-train_set.step_from+1) * 2, seqlen=train_set.seq_len, lstm_hidden_channel=64, lstm_layers=1, bidirectional=True)
-    # net = NET.HydroNetLSTMAM(lstm_hidden_channel=32, lstm_layers=1, bidirectional=True)
+    # net = NET.HydroNetDense(input_channel=train_set.channels, output_channel=(train_set.step_to-train_set.step_from+1), seqlen=train_set.seq_len, hidden_channels=64, hidden_layers=4)
+    # net = NET.HydroNetLSTM(input_channel=train_set.channels, output_channel=(train_set.step_to-train_set.step_from+1), lstm_hidden_channel=64, lstm_layers=1, bidirectional=True)
+    # net = NET.HydroNetCNN(
+    #     input_channel=train_set.channels,
+    #     output_channel=(train_set.step_to-train_set.step_from+1),
+    #     seqlen = train_set.seq_len,
+    #     cnn_channels=[64,64,64])
+    net = NET.HydroNetCNNLSTM(
+        input_channel=train_set.channels,
+        output_channel=(train_set.step_to-train_set.step_from+1),
+        cnn_channels=[32,64],
+        lstm_hidden_channel=64, lstm_layers=2, bidirectional=True)
+    # net = NET.HydroNetLSTMAM(input_channel=train_set.channels,
+    #     output_channel=(train_set.step_to-train_set.step_from+1) * 2,
+    #     lstm_hidden_channel=64, lstm_layers=1, bidirectional=True)
     # net = NET.HydroNetCNNLSTMAM(input_channel=len(CONSTS.CORR), conv_channel=32, conv_filter_sizes=[1,2,3], lstm_hidden_channel=32, lstm_layers=1, bidirectional=True)
     net = net.to(device)
     
-    train(net, train_loader, test_loader)
+    train(net, train_loader, test_loader, train_fig_loader)
 
     net = net.cpu()
-    # net.load_state_dict(
-    #     torch.load(f'{NET_DICT_DIR}/best.pth', map_location=torch.device('cpu'))
-    # )
+    net.load_state_dict(
+        torch.load(f'{NET_DICT_DIR}/best.pth', map_location=torch.device('cpu'))
+    )
 
-    plot_test(test_loader, net, dict_paths=[
-        f'{NET_DICT_DIR}/best.pth',
-        # f'{NET_DICT_DIR}/500.pth'
-    ], step=0)
-    # plt.show()
-    plt.savefig(f'{NET_DICT_DIR}/best_fig.png')
-    plt.cla()
-    plt.close('all')
+    # plot_test(test_loader, net, dict_paths=[
+    #     f'{NET_DICT_DIR}/best.pth',
+    #     # f'{NET_DICT_DIR}/500.pth'
+    # ], step=0)
+    # # plt.show()
+    # plt.savefig(f'{NET_DICT_DIR}/best_fig.png')
+    # plt.cla()
+    # plt.close('all')
     rs, rmses, mapes, nses = get_eval_values(test_loader, net, steps=[0,2,4,6])
     results = torch.tensor([rs, rmses, mapes, nses])
     with open('temp.csv', 'a', newline='') as csv_file:
