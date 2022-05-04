@@ -1,7 +1,5 @@
-import enum
-import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from vmdpy import VMD
 
 import math
@@ -10,9 +8,10 @@ import utils as UTILS
 import consts as CONSTS
 
 class AbstractHydroDataset(Dataset):
-
+    ''' 基类 '''
     def __init__(self, path, seq_len = CONSTS.SEQUENCE_LENGTH, is_training = True, train_test_ratio = 0.75, step_from=1, step_to=7):
         self.data = torch.load(path)
+        # 数据归一化；见具体实现
         self.data = UTILS.normalize_01_data(self.data)
         self.train_size = int(len(self.data) * train_test_ratio)
         self.is_training = is_training
@@ -37,8 +36,17 @@ class AbstractHydroDataset(Dataset):
 
 
 class HydroDataset(AbstractHydroDataset):
-    
+    '''
+    数据集；input为数据中前其他所有列，output为数据中最后一列
+    '''
     def __init__(self, path, seq_len = CONSTS.SEQUENCE_LENGTH, is_training = True, train_test_ratio = 0.75, step_from=1, step_to=7):
+        '''
+        :param seq_len: 序列长度
+        :param is_training: True - 为训练集；数据从path获得的数据中属于训练集的那一部分数据中取得. False - 为测试集
+        :param train_test_ratio: 训练集占全部的比例
+        :param step_from: output起始位置。第n日是输入序列的最后一日，第```(n + step_from)```日为输出序列的第一日
+        :param step_to: output终止位置
+        '''
         super(HydroDataset, self).__init__(path, seq_len, is_training, train_test_ratio, step_from, step_to)
         self.channels = 13
 
@@ -51,7 +59,9 @@ class HydroDataset(AbstractHydroDataset):
 
 
 class HydroDatasetCorr(AbstractHydroDataset):
-    
+    '''
+    只选择相关性强的项；用CONSTS.CORR调节输出的项
+    '''
     def __init__(self, path, seq_len = CONSTS.SEQUENCE_LENGTH, is_training = True, train_test_ratio = 0.75, step_from=1, step_to=7):
         super(HydroDatasetCorr, self).__init__(path, seq_len, is_training, train_test_ratio, step_from, step_to)
         self.channels = len(CONSTS.CORR)
@@ -64,7 +74,9 @@ class HydroDatasetCorr(AbstractHydroDataset):
 
 
 class HydroDatasetVMD(AbstractHydroDataset):
-    
+    '''
+    增加一VMD分解
+    '''
     def __init__(self, path, seq_len = CONSTS.SEQUENCE_LENGTH, is_training = True, train_test_ratio = 0.75, step_from=1, step_to=7):
         super(HydroDatasetVMD, self).__init__(path, seq_len, is_training, train_test_ratio, step_from, step_to)
         #. some sample parameters for VMD  
@@ -92,7 +104,7 @@ class HydroDatasetVMD(AbstractHydroDataset):
 
 class SineDataset(Dataset):
     '''
-    a testing dataset
+    用于测试的数据，为一正弦波形
     '''
     def __init__(self, channels=13, seq_len = 12, data_size = 500, is_training = True, train_test_ratio = 0.75):
         train_size = int(data_size * train_test_ratio)
@@ -128,29 +140,7 @@ class SineDataset(Dataset):
 if __name__ == '__main__':
     train_test_ratio = 0.8
 
-    
     # train_set = SineDataset(data_size = 90, is_training=True, train_test_ratio=train_test_ratio)
     # test_set = SineDataset(data_size = 90, is_training=False, train_test_ratio=train_test_ratio)
-
     train_set = HydroDataset('zt.pth', is_training=True, train_test_ratio=train_test_ratio)
     print(train_set[0][0].shape)
-    # test_set = HydroDataset('xy.pth', is_training=False, train_test_ratio=train_test_ratio)
-    # print(len(train_set))
-    # torch.save(test_set[0], 'test_vmd.pth')
-
-    # train_loader = DataLoader(train_set, 4, True)
-    # test_loader = DataLoader(test_set, 4, False)
-
-    # for i, a in enumerate(train_loader):
-    #     test_input, test_output = a
-    #     break
-    # print(len(train_loader), len(test_loader), test_input.shape, test_input.min(), test_input.max(), test_output, test_output.shape)
-
-    
-    # train_set = SineDataset(data_size = 90, is_training=True, train_test_ratio=train_test_ratio)
-    # test_set = SineDataset(data_size = 90, is_training=False, train_test_ratio=train_test_ratio)
-
-    # print(len(train_set))
-    # for i in range(len(test_set)):
-    #     inp, tar = test_set[i]
-    #     print(tar)

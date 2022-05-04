@@ -1,7 +1,10 @@
+'''
+网络结构
+'''
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
 from scipy.stats import pearsonr
 
 import matplotlib.pyplot as plt
@@ -11,9 +14,20 @@ import utils as UTILS
 
 
 class HydroNetDense(nn.Module):
+    '''
+    简单全连接网络
+    '''
     def __init__(self, input_channel=13, seqlen=12, output_channel=7, hidden_channels=64, hidden_layers=3):
+        '''
+        :param input_channel: 输入通道数
+        :param seqlen: 序列长度
+        :param output_channel: 输出通道数
+        :param hidden_channels: 中间层通道数 (64, 128, 256, ...)
+        :param hidden_layers: 中间层数 (1, 2, 3, ...)
+        '''
         super(HydroNetDense, self).__init__()
         
+        # 每层，除最后一层，都为 linear + elu
         self.linear_in = nn.Sequential(
             nn.Linear(input_channel * seqlen, hidden_channels),
             nn.ELU()
@@ -37,8 +51,18 @@ class HydroNetDense(nn.Module):
         out = self.linear_out(out)
         return out
 
+
 class HydroNetCNN(nn.Module):
+    '''
+    简单卷积网络
+    '''
     def __init__(self, input_channel=13, output_channel=7, seqlen=30, cnn_channels=[16, 32, 64]):
+        '''
+        :param input_channel: 输入通道数
+        :param seqlen: 序列长度
+        :param output_channel: 输出通道数
+        :param cnn_channels: 中间层通道数 (一般设为逐层增加 如[32,64,128,256] 数组中有几个数，即为几层中间层)
+        '''
         super(HydroNetCNN, self).__init__()
         
         self.input_channel = input_channel
@@ -55,15 +79,9 @@ class HydroNetCNN(nn.Module):
                     nn.Conv1d(out_conv_size, out_conv_size, kernel_size=3, padding=1, padding_mode='replicate', groups=4),
                     # nn.BatchNorm1d(out_conv_size),
                     nn.LeakyReLU(),
-                    # nn.Conv1d(out_conv_size, out_conv_size, kernel_size=1),
-                    # nn.BatchNorm1d(out_conv_size),
-                    # nn.LeakyReLU(),
-                    # nn.Conv1d(out_conv_size, out_conv_size, kernel_size=1),
-                    # nn.BatchNorm1d(out_conv_size),
-                    # nn.InstanceNorm1d(out_conv_size),
-                    # nn.ELU()
                 )
             )
+        # 最后全连接
         self.linear = nn.Sequential(
             nn.Linear(cnn_channels[-1] * seqlen, output_channel),
             nn.Dropout(0.1),
@@ -72,7 +90,6 @@ class HydroNetCNN(nn.Module):
     
     def forward(self, input):
         out = input.permute(0,2,1)
-        # out = input[:,None,:,:]
         for conv in self.convs:
             out = conv(out)
         out = out.reshape(out.shape[0], -1)
@@ -81,7 +98,17 @@ class HydroNetCNN(nn.Module):
 
 
 class HydroNetLSTM(nn.Module):
+    '''
+    简单LSTM网络
+    '''
     def __init__(self, input_channel=13, output_channel=7, lstm_hidden_channel=64, lstm_layers=2, bidirectional=True):
+        '''
+        :param input_channel: 输入通道数
+        :param output_channel: 输出通道数
+        :param lstm_hidden_channel: lstm层通道数
+        :param lstm_layers: lstm层数
+        :param bidirectional: 是否为双向lstm
+        '''
         super(HydroNetLSTM, self).__init__()
         
         self.input_channel = input_channel
@@ -96,15 +123,16 @@ class HydroNetLSTM(nn.Module):
         )
     
     def forward(self, input):
-        # input = input.unsqueeze(1)
         out, _ = self.lstm(input)
         out = out[:,-1,:]
-        # out = out.reshape(out.shape[0], -1)
         out = self.linear(out)
         return out
 
 
 class HydroNetCNNLSTM(nn.Module):
+    '''
+    先CNN后LSTM
+    '''
     def __init__(self, input_channel=13, output_channel=7, cnn_channels=[16, 32, 64], lstm_hidden_channel=64, lstm_layers=2, bidirectional=True):
         super(HydroNetCNNLSTM, self).__init__()
         
@@ -142,7 +170,6 @@ class HydroNetCNNLSTM(nn.Module):
     
     def forward(self, input):
         out = input.permute(0,2,1)
-        # out = input[:,None,:,:]
         for conv in self.convs:
             out = conv(out)
         out = out.permute(0,2,1)
@@ -152,6 +179,9 @@ class HydroNetCNNLSTM(nn.Module):
         return out
 
 class HydroNetLSTMAM(nn.Module):
+    '''
+    先LSTM后注意力
+    '''
     def __init__(self, input_channel=13, output_channel=7, lstm_hidden_channel=32, lstm_layers=2, bidirectional=True):
         super(HydroNetLSTMAM, self).__init__()
         
@@ -167,7 +197,10 @@ class HydroNetLSTMAM(nn.Module):
         )
 
     def attention_net(self, output, hn):
-        # hidden = hn.permute(1,0,2).reshape(-1,self.lstm_hidden_channel*self.num_directions,self.lstm_layers)
+        '''
+        注意力模块
+        https://blog.csdn.net/qq_52785473/article/details/122852099
+        '''
         hidden = hn.view(self.lstm_layers,-1,self.lstm_hidden_channel*self.num_directions).permute(1,0,2).transpose(1,2)
         hidden = torch.tanh(hidden)
         attn_weights = torch.bmm(output, hidden)
@@ -184,11 +217,14 @@ class HydroNetLSTMAM(nn.Module):
         return ln_out
 
 class HydroNetCNNLSTMAM(HydroNetCNNLSTM):
+    '''
+    
+    CNN+LSTM+注意力
+    '''
     def __init__(self, input_channel=13, output_channel=7, cnn_channels=[16, 32, 64], lstm_hidden_channel=64, lstm_layers=2, bidirectional=True):
         super(HydroNetCNNLSTMAM, self).__init__(input_channel, output_channel, cnn_channels, lstm_hidden_channel, lstm_layers, bidirectional)
         
     def attention_net(self, output, hn):
-        # hidden = hn.permute(1,0,2).reshape(-1,self.lstm_hidden_channel*self.num_directions,self.lstm_layers)
         hidden = hn.view(self.lstm_layers,-1,self.lstm_hidden_channel*self.num_directions).permute(1,0,2).transpose(1,2)
         hidden = torch.tanh(hidden)
         attn_weights = torch.bmm(output, hidden)
@@ -209,8 +245,12 @@ class HydroNetCNNLSTMAM(HydroNetCNNLSTM):
         out = self.linear(out)
         return out
 
+# 几种accuracy和loss计算
 
 class L1Accuracy(nn.L1Loss):
+    '''
+    用``nn.L1Loss``计算``L1Acc``
+    '''
     def __init__(self):
         super(L1Accuracy, self).__init__()
 
@@ -218,31 +258,21 @@ class L1Accuracy(nn.L1Loss):
         out = super(L1Accuracy, self).forward( a, b )
         return 1 - out
 
-class MSEEnhanceLoss(nn.Module):
-    def __init__(self):
-        super(MSEEnhanceLoss, self).__init__()
-    
-    def enhance_data(self, d):
-        return torch.sqrt(d)
-    
-    def forward(self, pred, target):
-        mask = target * 10 + 1
-        mse = torch.pow(pred - target, 2) * mask
-        # enhance_mse = torch.pow(self.enhance_data(pred) - self.enhance_data(target), 2) * (torch.floor(target*4)*5+1)
-        # enhance_mse *= 0.1
-        return torch.mean(mse) # + torch.mean(enhance_mse)
-
 def PearsonR(yhat, y):
+    ''' pearson相关系数 '''
     r, _ = pearsonr(yhat, y)
     return r
 
 def RMSE(yhat, y):
+    ''' RMSE '''
     return torch.sqrt(torch.mean((yhat - y) ** 2))
 
 def MAPE(yhat, y):
+    ''' MAPE '''
     return torch.mean(torch.abs((yhat - y) / y))
 
 def NSE(yhat, y):
+    ''' NSE '''
     return (torch.sum((yhat - y)**2) / torch.sum((y - torch.mean(y)) ** 2))
 
 if __name__ == '__main__':

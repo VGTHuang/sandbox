@@ -14,6 +14,7 @@ from net import PearsonR, RMSE, MAPE, NSE
 
 
 def load_model(dict_path):
+    ''' 加载模型 '''
     net = NET.HydroNetLSTM(lstm_hidden_channel=32, lstm_layers=2, bidirectional=True)
     net.load_state_dict(
         torch.load(dict_path, map_location=torch.device('cpu'))
@@ -37,7 +38,8 @@ def predict(data: torch.Tensor, net: nn.Module, is_testing_data=False):
     return pred.flatten()
 
 
-def plot_train(train_loader, net, device='cpu'):
+def plot_train(train_loader: DataLoader, net, device='cpu'):
+    ''' 作图(训练集) '''
     net.eval()
     targets = []
     predicts = []
@@ -56,7 +58,8 @@ def plot_train(train_loader, net, device='cpu'):
     plt.show()
 
 
-def plot_test(test_loader, net, dict_paths, device='cpu', step=0):
+def plot_test(test_loader: DataLoader, net, dict_paths, device='cpu', step=0):
+    ''' 作图(测试集) '''
     net.eval()
     _, axs = plt.subplots(2,1,figsize=(16, 4))
     if not dict_paths:
@@ -96,7 +99,12 @@ def plot_test(test_loader, net, dict_paths, device='cpu', step=0):
     # plt.show()
 
 
-def get_eval_values(test_loader, net, device='cpu', steps=[0,2,4,6]):
+def get_eval_values(test_loader: DataLoader, net, device='cpu', steps=[0,2,4,6]):
+    '''
+    计算各指标
+    :param steps: 哪几步的输出参与指标的计算 [0,2,4,6]指，从[0 1 2 3 4 5 6]七步输出中抽[0 2 4 6]位的真实值和预测值
+    :return: pearsonrs, rmses, mapes, nses, 各为一数组，长度为``steps``中指定的步数个数n
+    '''
     net.eval()
     targets = []
     predicts = []
