@@ -1,18 +1,20 @@
 <template>
   <!-- <img alt="Vue logo" src="./assets/logo.png">
   <HelloWorld msg="Welcome to Your Vue.js App"/> -->
-  <socket-test></socket-test>
+  <!-- <socket-test></socket-test> -->
+  <dialog-test></dialog-test>
 </template>
 
 <script>
 // import HelloWorld from './components/HelloWorld.vue'
-import SocketTest from './components/SocketTest.vue'
+// import SocketTest from './components/SocketTest.vue'
+import DialogTest from './components/DialogTest.vue'
 
 export default {
   name: 'App',
   components: {
     // HelloWorld
-    SocketTest
+    DialogTest
   }
 }
 </script>
