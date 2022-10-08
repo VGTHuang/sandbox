@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+  <div id="app">
+    <input v-model="foo" /> {{foo}}
+    <br/>
+    <input v-model="bar" />
+    <br/> {{bar}}
+    <br/> {{bar}}
+    <br/> {{bar}}
+  </div>
+</body>
+<script>
+
+  function Dep() {
+    this.subs = {}
+  }
+  Dep.prototype = {
+    addSub(sub) {
+      if (!(sub.name in this.subs)) {
+        this.subs[sub.name] = []
+      }
+      this.subs[sub.name].push(sub)
+    },
+    notify(key) {
+      this.subs[key].forEach(sub => {
+        sub.update()
+      })
+    }
+  }
+
+  function Watcher(vm, node, name) {
+    Dep.target = this
+    this.vm = vm
+    this.node = node
+    this.name = name
+    this.update()
+    Dep.target = null
+  }
+
+  Watcher.prototype = {
+    update() {
+      this.get()
+      this.node.nodeValue = this.value
+    },
+    get() {
+      this.value = this.vm[this.name]
+    }
+  }
+
+  function nodeToFragment(node, vm) {
+    var fragment = document.createDocumentFragment()
+    var child = node.firstChild
+    while (child = node.firstChild) { // get first child from node until there is none left
+      compile(child, vm)
+      fragment.appendChild(child)
+    }
+    return fragment
+  }
+
+  function compile(node, vm) {
+    var reg = /\{\{(.*)\}\}/
+    if (node.nodeType === 1) {
+      var attrs = node.attributes
+      for (let index = 0; index < attrs.length; index += 1) {
+        attr = attrs[index]
+        if (attr.nodeName == 'v-model') {
+          var name = attr.nodeValue
+          node.addEventListener('input', function(e) {
+            vm[name] = e.target.value
+          })
+          node.value = vm.data[name]
+          node.removeAttribute('v-model')
+        }
+      }
+    } else if (node.nodeType === 3) {
+      if (reg.test(node.nodeValue)) {
+        var name = RegExp.$1.trim()
+        node.nodeValue = vm[name]
+        new Watcher(vm, node, name)
+      }
+    }
+  }
+
+  function Vue(options) {
+    this.data = options.data
+    observe(this.data, this)
+    var id = options.el
+    var dom = nodeToFragment(document.getElementById(id), this)
+    document.getElementById(id).appendChild(dom)
+  }
+
+  function observe(obj, vm) {
+    Object.keys(obj).forEach(key => {
+      defineReactive(vm, key, obj[key])
+    })
+  }
+
+  function defineReactive(obj, key, val) {
+    dep = new Dep()
+    Object.defineProperty(obj, key, {
+      get: function() {
+        if (Dep.target) {
+          dep.addSub(Dep.target)
+        }
+        return val
+      },
+      set: function(newVal) {
+        if (val === newVal) {
+          return
+        }
+        val = newVal
+        dep.notify(key)
+      }
+    })
+  }
+
+  var vm = new Vue({
+    el: 'app',
+    data: {
+      foo: 'something!',
+      bar: 'something2!'
+    }
+  })
+
+
+
+</script>
+</html>
